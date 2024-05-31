@@ -1,4 +1,3 @@
-using System.Collections.Generic;
 using System.Net;
 using Azure.Messaging.ServiceBus;
 using Azure.Storage.Blobs;
@@ -23,26 +22,28 @@ public class HttpTriggerCompare(
 
 
     [Function("HttpTriggerCompare")]
-    public async Task<HttpResponseData> Run([HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequestData req,
+    public async Task<HttpResponseData> Run(
+        [HttpTrigger(AuthorizationLevel.Function, "get", "post")] HttpRequestData req,
         FunctionContext executionContext)
     {
         _logger.LogInformation("Processing snapshots");
 
         var http = new HttpClient();
         http.DefaultRequestHeaders.Add("User-Agent", "StockAutomationCore/1.0");
-        var newFile = await FetchOldFileFromBlobStorageAsync();
+        var newFile = await Downloader.DownloadToBytes(http);
         var oldFile = await FetchOldFileFromBlobStorageAsync();
 
         if (oldFile.Length == 0)
         {
             oldFile = newFile;
         }
+
         await UploadNewFileToBlobStorageAsync(newFile);
         var newLines = HoldingSnapshotLineParser.ParseLinesFromBytes(newFile);
         var oldLines = HoldingSnapshotLineParser.ParseLinesFromBytes(oldFile);
 
         var diff = new HoldingsDiff(oldLines, newLines);
-        var diffResult =  TextDiffFormatter.Format(diff);
+        var diffResult = TextDiffFormatter.Format(diff);
         await SendMessageToServiceBusQueueAsync(diffResult);
         var response = req.CreateResponse(HttpStatusCode.OK);
         response.Headers.Add("Content-Type", "text/plain; charset=utf-8");
@@ -81,6 +82,7 @@ public class HttpTriggerCompare(
         await download.Content.CopyToAsync(ms);
         return ms.ToArray();
     }
+
     private async Task UploadNewFileToBlobStorageAsync(byte[] newFile)
     {
         var containerName = "snapshots";
