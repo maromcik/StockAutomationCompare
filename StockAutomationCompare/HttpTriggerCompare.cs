@@ -30,7 +30,7 @@ public class HttpTriggerCompare(
 
         var http = new HttpClient();
         http.DefaultRequestHeaders.Add("User-Agent", "StockAutomationCore/1.0");
-        var newFile = await Downloader.DownloadToBytes(http);
+        var newFile = await FetchOldFileFromBlobStorageAsync();
         var oldFile = await FetchOldFileFromBlobStorageAsync();
 
         if (oldFile.Length == 0)
