@@ -9,11 +9,9 @@ var host = new HostBuilder()
     .ConfigureServices(services =>
     {
         var blobServiceConnectionString = Environment.GetEnvironmentVariable("CUSTOMCONNSTR_BLOB_STORAGE");
-        Console.WriteLine(blobServiceConnectionString);
         services.AddSingleton(new BlobServiceClient(blobServiceConnectionString));
 
         var serviceBusConnectionString = Environment.GetEnvironmentVariable("CUSTOMCONNSTR_SERVICE_BUS");
-        Console.WriteLine(serviceBusConnectionString);
         services.AddSingleton(new ServiceBusClient(serviceBusConnectionString));
 
         services.AddApplicationInsightsTelemetryWorkerService();
